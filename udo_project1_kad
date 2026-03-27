@@ -10,7 +10,7 @@ def H(X):
     Heaviside function of the matrix X
     """
     HX = 0
-    if (x>0): HX = 1
+    if (X>0): HX = 1
     else: HX = 0
     return HX
 
@@ -24,20 +24,52 @@ def grid_analysis(v, C):
     Parameters
     ----------
     v : array-like (n,)
-        your own description of design variables
+       descriptions of all power lines defined by direction of energy betweeen nodes 
+       ex: power that moves from node 4 to node 6 is P_4_6 
+
     C : any
-        your own description of the collection of constants needed for the analysis
+        constants related to the power generation cost (applies to nodes A and B)
 
     Returns
     -------
     f : float
-        your own description of the design objective
+        is the output of the optimization, refers to the cost of power genteration of the entire grid 
     g : array-like (m,)
-        your own description of the design constraints
+        refers to cosntraint equations used in the optimization of the power grid
+        4 constraints are used in this assignment:
+            1. the total power generated at a generating station can not exceed the power generating
+            capacity of that station.
+            2. The total power delivered to a demand node must not be less than the power demanded
+            at that node
+            3. The power transmitted along a line must be within the power carrying capacity of the
+            line.
+            4. No branch connected to a generating station may transmit power into the station.
+
     """
 
-    P_A_1 = v[0]  # description of design variable "P_A_1", units
-    ...
+    P_A_1 = v[0]    # description of design variable "P_A_1", units
+    P_A_2 = v[1]    # description of design variable "P_()_()", units
+    P_A_3 = v[2]
+    P_B_7 = v[3]   
+    P_B_8 = v[4]
+    P_B_9 = v[5] 
+    P_1_2 = v[6]
+    P_1_11 = v[7]
+    P_1_12 = v[8]
+    P_2_3 = v[9]
+    P_2_12 = v[10]
+    P_3_4 = v[11]
+    P_4_5 = v[12]
+    P_4_6 = v[13]
+    P_5_6 = v[14]
+    P_5_7 = v[15]
+    P_6_7 = v[16]
+    P_6_8 = v[17]
+    P_7_8 = v[18]
+    P_8_9 = v[19]
+    P_9_10 = v[20]
+    P_10_11 = v[21]
+    P_10_12 = v[22]
     P_11_12 = v[23]  # description of design variable "P_11_12", units
 
     A = C.A   # description of constant A, units
