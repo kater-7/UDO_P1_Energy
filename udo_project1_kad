@@ -1,0 +1,116 @@
+import numpy as np
+from types import SimpleNamespace
+from multivarious.opt import sqp
+from multivarious.utl import plot_cvg_hst, format_plot
+
+# Define the optimization problem. =========================================
+
+def H(X):
+    """
+    Heaviside function of the matrix X
+    """
+    HX = 0
+    if (x>0): HX = 1
+    else: HX = 0
+    return HX
+
+
+def grid_analysis(v, C):
+    """
+    Your own comments describing how this analysis function
+    relates the design objective, f, and the design constraints, g, to
+    the design variables, v, and constants, C.
+
+    Parameters
+    ----------
+    v : array-like (n,)
+        your own description of design variables
+    C : any
+        your own description of the collection of constants needed for the analysis
+
+    Returns
+    -------
+    f : float
+        your own description of the design objective
+    g : array-like (m,)
+        your own description of the design constraints
+    """
+
+    P_A_1 = v[0]  # description of design variable "P_A_1", units
+    ...
+    P_11_12 = v[23]  # description of design variable "P_11_12", units
+
+    A = C.A   # description of constant A, units
+    b = C.b   # description of constant b, units
+    c = C.c   # description of constant c, units
+    ee = C.ee # description of constant ee, units
+
+    L = ...
+
+    # the design objective
+    f = ...
+
+    # the constraints
+    g = ...
+
+    return f[0], g
+
+
+# Set-up and Solve the grid transmission optimization problem. ===============
+
+# Constants used within the optimization analysis ...
+C = SimpleNamespace()  # can store arrays, lists, etc.
+
+# Constants used in the design objective and constraint functions
+C.A = np.array([., ., ., .,
+                ., ., ., .])
+
+C.b = np.array([., ., ., ., ..., ., ])
+C.c = np.array([., ., ., ., ., ..., ., ])
+C.T = ...
+# ... etc ...
+
+# Check columns of A sum to zero
+sumA = np.sum(C.A)
+
+# Bounds on design variables
+v_lb = np.array([., ., ., ., ])  # lower bounds
+v_ub = np.array([., ., ., ., ])  # upper bounds
+
+n = len(v_lb)  # number of design variables
+
+# Initial guess
+# v_init = v_lb + np.random.rand(n) * (v_ub - v_lb)  # random
+v_init = np.array([., ., ., ., ])  # specific guess
+
+# Optimization options
+# [msg, tol_v, tol_f, tol_g, max_evals, pnlty, expn, m_max, cov_F]
+opts = [1, 2e-2, 2e-2, 1e-3, 50 * n**3, 0.7, 0.5, 1, 0.05]
+
+# Solve the optimization problem
+v_opt, f_opt, g_opt, cvg_hst, lbda_opt, _ = sqp(
+    grid_analysis, v_init, v_lb, v_ub, opts, C
+)
+
+# Plot convergence history
+format_plot(font_size=15, line_width=3, marker_size=7)
+plot_cvg_hst(cvg_hst, v_opt, opts, save_plots=True)
+
+
+# Additional parameters (converted from MATLAB-style)
+G = np.array([60, 225])
+cA = 20
+cB = 12
+
+# power generating capacities of plants A and B
+# smaller plant: less capacity, less efficient
+# larger plant: more capacity, more efficient
+
+m, n = C.A.shape  # m: constraints, n: variables
+
+lbda_opt = lbda_opt[:len(C.b)]
+
+net_generation = ...
+net_supply = ...
+net_demand = ...
+shortfall = ...
