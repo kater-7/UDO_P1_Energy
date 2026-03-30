@@ -1,7 +1,9 @@
 import numpy as np
+from matplotlib import pyplot as plt
 from types import SimpleNamespace
 from multivarious.opt import sqp
-from multivarious.utl import plot_cvg_hst, format_plot
+from multivarious.rvs import lognormal, beta
+from multivarious.utl import opt_options, plot_cvg_hst, format_plot, plot_ECDF_ci
 
 # Define the optimization problem. =========================================
 
@@ -9,24 +11,20 @@ def H(X):
     """
     Heaviside function of the matrix X
     """
-    HX = 0
-    if (X>0): HX = 1
-    else: HX = 0
-    return HX
+    H = (X > 0).astype(int)
+    return H
 
 def build_L(A, v):
-    L = np.zeros_like(A, dtype=float)
-
-    for i in range(A.shape[0]):
-        for j in range(A.shape[1]):
-            if A[i, j] == 1:
-                L[i, j] = -v[j]
-            elif A[i, j] == -1:
-                L[i, j] = v[j]
-
+    '''
+    Given input A matrix, and v vector of power lines,
+    return L matrix noting all transmision lines that result in a cost decay by the H function
+    '''
+    D = np.diag(-v)
+    L = A @ D
+    print(L)
     return L
 
-def grid_analysis(v, C):
+def power_grid_analysis(v, C):
     """
     Your own comments describing how this analysis function
     relates the design objective, f, and the design constraints, g, to
@@ -35,8 +33,8 @@ def grid_analysis(v, C):
     Parameters
     ----------
     v : array-like (n,)
-       descriptions of all power lines defined by direction of energy betweeen nodes 
-       ex: power that moves from node 4 to node 6 is P_4_6 
+       descriptions of all power lines defined by direction of energy betweeen nodes
+       ex: power that moves from node 4 to node 6 is P_4_6
 
     C : any
         constants related to the power generation cost (applies to nodes A and B)
@@ -44,7 +42,7 @@ def grid_analysis(v, C):
     Returns
     -------
     f : float
-        is the output of the optimization, refers to the cost of power genteration of the entire grid 
+        is the output of the optimization, refers to the cost of power genteration of the entire grid
     g : array-like (m,)
         refers to cosntraint equations used in the optimization of the power grid
         4 constraints are used in this assignment:
@@ -61,9 +59,9 @@ def grid_analysis(v, C):
     P_A_1 = v[0]    # description of design variable "P_A_1", units
     P_A_2 = v[1]    # description of design variable "P_()_()", units
     P_A_3 = v[2]
-    P_B_7 = v[3]   
+    P_B_7 = v[3]  
     P_B_8 = v[4]
-    P_B_9 = v[5] 
+    P_B_9 = v[5]
     P_1_2 = v[6]
     P_1_11 = v[7]
     P_1_12 = v[8]
@@ -83,26 +81,41 @@ def grid_analysis(v, C):
     P_10_12 = v[22]
     P_11_12 = v[23]  # description of design variable "P_11_12", units
 
-    A = C.A   # description of constant A, units
-    b = C.b   # description of constant b, units
-    c = C.c   # description of constant c, units
-    ee = C.ee # description of constant ee, units
+    A = C.A         # A matrix holding the constants related to power in the grid
+    b = C.b         # b vector holding the demanded energy
+    c = C.c         # c vector cost  associated with the energy production
+    loss = C.loss   # energy losses
+    #ee = C.ee # description of constant ee, units
 
-    L = ...
+    #compute L from A and v in one line using @ and np.diag
+    L = build_L(A,v)
 
-    # the design objective
-    f = ...
+    # the design objective, cTv
+    # compute f from c and v in one line using @
+    f = c.transpose()@v
 
-    # the constraints
-    g = ...
+    # the design constraints
+    """
+    1. the total power generated at a generating station can not exceed the power generating capacity of that station.
+    2. The total power delivered to a demand node must not be less than the power demanded at that node
+    3. The power transmitted along a line must be within the power carrying capacity of the line.
+    4. No branch connected to a generating station may transmit power into the station.
+    """
+    #compute g from A, loss, H(-L), v and b in one line using *, -, and @
+    g = np.array([ , , , ])
 
-    return f[0], g
+    return f, g
 
+#set-up and sole the grid transmission optimization problem ====
+cA = 20
+cB = 12
+D = np.array([10,15,20,10,20,50,80,30,10,8,12,11])  #demand
+G = np.array([110,300])                             #generation capacity of generator
+T = 90                                              #upper capacity of power line
+loss = 0.05                                         #loss of energy
 
-# Set-up and Solve the grid transmission optimization problem. ===============
-
-# Constants used within the optimization analysis ...
-C = SimpleNamespace()  # can store arrays, lists, etc.
+#constants used within the optimizatoin analysis
+C = SimpleNamespace()
 
 # Constants used in the design objective and constraint functions
 C.A = np.array([
@@ -114,59 +127,81 @@ C.A = np.array([
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], #4
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0], #5
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, 1, 1, 0, 0, 0, 0], #6
-    [0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, 1, 0, 0, 0], #7 
+    [0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, 1, 0, 0, 0], #7
     [0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, 1, 0, 0], #8
     [0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 1, 0, 0], #9
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 1, 1, 0], #10
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 1], #11
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, -1], #12
 ])
-C.b = np.array([., ., ., ., ..., ., ])
-C.c = np.array([., ., ., ., ., ..., ., ])
-C.T = ...
-# ... etc ...
+C.b = np.block([., ., ., ., ..., ., ])          #constant array
+C.c = np.block([., ., ., ., ., ..., ., ])       #constant array, insert units
+C.loss = ...
+
+m,n = C.A.shape
 
 # Check columns of A sum to zero
 sumA = np.sum(C.A)
+print ("column sums of A are zeroes: ", sumA)
 
 # Bounds on design variables
-v_lb = np.array([., ., ., ., ])  # lower bounds
-v_ub = np.array([., ., ., ., ])  # upper bounds
+v_lb = np.ones(24, dtype=int) * -90 # lower bounds
+v_lb[:6] = 0
+v_ub = np.ones(24, dtype=int) * 90
+n = len(v_lb)  # number of design variables
+
+v_init = (v_lb +v_ub)/2.0 #inital guess is midpoint of the bounds
 
 n = len(v_lb)  # number of design variables
 
-# Initial guess
-# v_init = v_lb + np.random.rand(n) * (v_ub - v_lb)  # random
-v_init = np.array([., ., ., ., ])  # specific guess
-
 # Optimization options
-# [msg, tol_v, tol_f, tol_g, max_evals, pnlty, expn, m_max, cov_F]
-opts = [1, 2e-2, 2e-2, 1e-3, 50 * n**3, 0.7, 0.5, 1, 0.05]
+# [     msg     tol_v   tol_f   tol_g   max_evals]
+opts = [1,      1e-3,     1e-4, 1e-3,   5e3]
 
-# Solve the optimization problem
-v_opt, f_opt, g_opt, cvg_hst, lbda_opt, _ = sqp(
-    grid_analysis, v_init, v_lb, v_ub, opts, C
-)
+#solve the optimization problem using sqp in two steps (1) loss =0, (2) loss >0
+C.loss = (...)
 
-# Plot convergence history
-format_plot(font_size=15, line_width=3, marker_size=7)
-plot_cvg_hst(cvg_hst, v_opt, opts, save_plots=True)
+m, n = C.A.shape
+sumA = np.sum(C.A, axis = 0) # column-sum check for A should be ... 0's
+print("column sums  of A are zeors :", sumA)
+
+v_lb = T * np.block([ ., . ]) # lower bound on design variables
+v_ub = T * np.ones( ., . )    # upper bound on design variables
+
+v_init = (v_lb + v_ub) / 2.0  # initial guess: midpoint fo bounds
+
+#optimizations needed for sqp
+#        0     1        2       3        4
+#       msg  tol_v    tol_f   tol_g  max_evals
+opts = [ 1,   1e-3,   1e-4,   1e-3,     5e3     ]
+
+#Solve the optimization problem using sqp in two steps (1) loss = 0, (2) loss > 0
+C.loss = 0
+v_opt, f_opt, g_opt, cvg_hst, lbda_opt, _ = sqp(power_grid_analysis, v_init, v_lb, v_ub, opts, C)
+v_init = v_opt # this is a good initial guess for the solution with losses
+C.loss = loss
+v_opt, f_opt, g_opt, cvg_hst, lbda_opt, _ = sqp(power_grid_analysis, v_init, v_lb, v_ub, opts, C)
 
 
-# Additional parameters (converted from MATLAB-style)
-G = np.array([60, 225])
-cA = 20
-cB = 12
+#plot the convergence history
+format_plot(font_size = 15, line_width = 3, marker_size = 7)
+plot_cvg_hst( cvg_hst, v_opt, opts, save_plots = True)
+plt.show()
 
-# power generating capacities of plants A and B
-# smaller plant: less capacity, less efficient
-# larger plant: more capacity, more efficient
+net_generation = (...)
+L = (...) #compute L from A and v_opt in one line using @ and np.diag()
+net_supply = (...) # from A, L(v_opt), H(L), and v_opt using @
+net_demand = (...)
+net_shortfall = (...)
 
-m, n = C.A.shape  # m: constraints, n: variables
+#display output values
+formatted_supply = np.char.mod('%6.2f', supply[2:])
+print(f"supply: {' '.join(formatted_supply)}")
 
-lbda_opt = lbda_opt[:len(C.b)]
+formatted_demand = np.char.mod('%6.2f', D)
+print(f"demand: {' '.join(formatted_demand)}")
 
-net_generation = ...
-net_supply = ...
-net_demand = ...
-shortfall = ...
+print("net generation: ", np.round(net_generation * 100) / 100)
+print("net demand: ", np.round(net_demand * 100) / 100)
+print("net supply: ", np.round(net_supply * 100) / 100)
+print("net shortfall (net demand - net generation): ", np.round((net_demand - net_supply) * 1e3) / 1e3)
