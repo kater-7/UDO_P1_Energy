@@ -19,16 +19,10 @@ def build_L(A, v):
     Given input A matrix, and v vector of power lines,
     return L matrix noting all transmision lines that result in a cost decay by the H function
     '''
-    L = np.zeros_like(A, dtype=float)
-
-    for i in range(A.shape[0]):
-        for j in range(A.shape[1]):
-            if A[i, j] == 1:
-                L[i, j] = -v[j]
-            elif A[i, j] == -1:
-                L[i, j] = v[j]
-
-    return L
+    D = np.diag(-v)
+    L = A @ D
+    print(L)
+    ## A Matrix @ Diagnal matrix with negative v values on the diag coresponding to transmission lines
 
 def grid_analysis(v, C):
     """
@@ -98,7 +92,7 @@ def grid_analysis(v, C):
     f = ...
 
     # the constraints
-    g = ...
+    g = ...s
 
     return f[0], g
 
@@ -134,8 +128,9 @@ C.T = ...
 sumA = np.sum(C.A)
 
 # Bounds on design variables
-v_lb = np.zeros(24, dtype=int)  # lower bounds
-v_ub = np.ones(24, dtype=int)
+v_lb = np.ones(24, dtype=int) * -90 # lower bounds
+v_lb[:6] = 0
+v_ub = np.ones(24, dtype=int) * 90
 n = len(v_lb)  # number of design variables
 
 # Initial guess
