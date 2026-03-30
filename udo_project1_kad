@@ -15,6 +15,10 @@ def H(X):
     return HX
 
 def build_L(A, v):
+    '''
+    Given input A matrix, and v vector of power lines,
+    return L matrix noting all transmision lines that result in a cost decay by the H function
+    '''
     L = np.zeros_like(A, dtype=float)
 
     for i in range(A.shape[0]):
@@ -130,9 +134,8 @@ C.T = ...
 sumA = np.sum(C.A)
 
 # Bounds on design variables
-v_lb = np.array([., ., ., ., ])  # lower bounds
-v_ub = np.array([., ., ., ., ])  # upper bounds
-
+v_lb = np.zeros(24, dtype=int)  # lower bounds
+v_ub = np.ones(24, dtype=int)
 n = len(v_lb)  # number of design variables
 
 # Initial guess
