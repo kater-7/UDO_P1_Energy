@@ -102,7 +102,8 @@ def power_grid_analysis(v, C):
     4. No branch connected to a generating station may transmit power into the station.
     """
     #compute g from A, loss, H(-L), v and b in one line using *, -, and @
-    g = np.array([ , , , ])
+    v_loss = (1 - loss * H(L)) * v # V adjusted for losses
+    g = ( A @ v_loss ) - b # inequality reworked in g form
 
     return f, g
 
