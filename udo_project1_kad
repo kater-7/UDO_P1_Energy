@@ -195,15 +195,15 @@ net_supply = (...) # from A, L(v_opt), H(L), and v_opt using @
 net_demand = (...)
 net_shortfall = (...)
 
-# ------- Task 7 -------
+# ------- Task 7, 8 -------
 N = 100
 
 # random demand samples
 medD = D.copy()                     # median demand
 nd = len(D)                        # 12 demand nodes
 covD = 0.10 * np.ones((nd, 1))     # coefficient of variation
-RD = np.eye(nd)                    # no correlation
-# RD = .8*np.ones((nd,nd)) + .2*np.eye(n)  #task 8: correlated
+RD = np.eye(nd)                    # no correlation (task 7)
+#RD = 0.8*np.ones((nd, nd)) + 0.2*np.eye(nd)  # correlated (Task 8)
 Drand = lognormal.rnd(medD, covD, N, RD)   # shape: (12, N)
 
 # random transmission-capacity sample
@@ -212,13 +212,14 @@ aT = 70.0 * np.ones((n, 1))        # lower transmission capacity
 bT = 99.0 * np.ones((n, 1))        # upper transmission capacity
 qT = 4.0 * np.ones((n, 1))         # lower exponent
 pT = 2.0 * np.ones((n, 1))         # upper exponent
-RT = np.eye(n)                     # no correlation
-# RT = .8*np.ones((n,n)) + .2*np.eye(n)  #correlated
+RT = np.eye(n)                     # no correlation (Task 7)
+#RT = 0.7*np.ones((n, n)) + 0.3*np.eye(n)  # correlated (Task 8)
 Trand = beta.rnd(aT, bT, qT, pT, N, RT)    # correlated Beta sample
 
 # storage for outputs
 net_generation_mc = np.zeros(N)
 net_demand_mc = np.zeros(N)
+net_supply_mc = np.zeros(N)
 net_shortfall_mc = np.zeros(N)
 
 for k in range(N):
@@ -268,17 +269,18 @@ for k in range(N):
     # store results
     net_generation_mc[k] = net_generation
     net_demand_mc[k] = net_demand
+    net_supply_mc[k] = net_supply
     net_shortfall_mc[k] = net_shortfall
 
-# Node 7 demand sample (random node)
+# 7(c) node 7 demand sample (random node)
 plot_ECDF_ci(Drand[6, :], x_label='Demand at node 7 (MW)', fig_name='ecdf_demand_node7')
 plt.show()
 
-# Line P6,8 capacity sample (random line)
+# 7(d) line P6,8 capacity sample (random line)
 plot_ECDF_ci(Trand[17, :], x_label='Capacity of line P6,8 (MW)', fig_name='ecdf_capacity_P68')
 plt.show()
 
-# Scatter plot of one demand vs. another
+# 7(e) scatter plot of one demand vs. another
 plt.figure()
 plt.plot(Drand[0, :], Drand[6, :], 'o')
 plt.xlabel('Demand at node 1 (MW)')
@@ -287,7 +289,7 @@ plt.title('Task 7: Demand scatter')
 plt.grid(True)
 plt.show()
 
-# Scatter plot of one line capacity vs. another
+# 7(f) scatter plot of one line capacity vs. another
 plt.figure()
 plt.plot(Trand[6, :], Trand[17, :], 'o')
 plt.xlabel('Capacity of line P1,2 (MW)')
@@ -296,7 +298,7 @@ plt.title('Task 7: Capacity scatter')
 plt.grid(True)
 plt.show()
 
-# Cumulative distribution functions of outputs
+# 7(g) cumulative distribution functions of outputs
 plot_ECDF_ci(net_demand_mc, x_label='Net demand (MW)', fig_name='ecdf_net_demand')
 plt.show()
 
@@ -306,22 +308,16 @@ plt.show()
 plot_ECDF_ci(net_shortfall_mc, x_label='Net shortfall (MW)', fig_name='ecdf_net_shortfall')
 plt.show()
 
-# task 7 part h: what fraction of net_shortfall_mc is > 0.1 MW
-length = net_shortfall_mc.length
-counter = 0
-for i in range(length):
-    if net_shortfall.mc[i]>.1: counter += 1
-frac = counter/length
-print("task 7h, fraction of net_shortfall_mc > .1 MW: ", frac)
+# 7(h) fraction of net shortfall > 0.1 MW
+frac = np.mean(net_shortfall_mc > 0.1)
+print("Task 7(h), fraction of net shortfall > 0.1 MW:", frac)
 
-#display output values
-formatted_supply = np.char.mod('%6.2f', supply[2:])
-print(f"supply: {' '.join(formatted_supply)}")
-
+# Display output values
 formatted_demand = np.char.mod('%6.2f', D)
 print(f"demand: {' '.join(formatted_demand)}")
 
 print("net generation: ", np.round(net_generation * 100) / 100)
 print("net demand: ", np.round(net_demand * 100) / 100)
 print("net supply: ", np.round(net_supply * 100) / 100)
-print("net shortfall (net demand - net generation): ", np.round((net_demand - net_supply) * 1e3) / 1e3)
+print("net shortfall (net demand - net generation): ", np.round((net_demand - net_generation) * 1e3) / 1e3)
+print("net shortfall (net demand - net supply): ", np.round((net_demand - net_supply) * 1e3) / 1e3)
