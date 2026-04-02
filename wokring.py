@@ -212,12 +212,13 @@ aT = 70.0 * np.ones((n, 1))        # lower transmission capacity
 bT = 99.0 * np.ones((n, 1))        # upper transmission capacity
 qT = 4.0 * np.ones((n, 1))         # lower exponent
 pT = 2.0 * np.ones((n, 1))         # upper exponent
-RT = np.eye(n)                     # no correlation
+RT = np.eye(n)                     # task 8: no correlation
 # RT = .8*np.ones((n,n)) + .2*np.eye(n)  #correlated
 Trand = beta.rnd(aT, bT, qT, pT, N, RT)    # correlated Beta sample
 
 # storage for outputs
 net_generation_mc = np.zeros(N)
+net_supply_mc = np.zeros(N)
 net_demand_mc = np.zeros(N)
 net_shortfall_mc = np.zeros(N)
 
@@ -249,7 +250,6 @@ for k in range(N):
     C.loss = loss
     v_opt, f_opt, g_opt, cvg_hst, lbda_opt, _ = sqp(
         power_grid_analysis, v_init, v_lb, v_ub, opts, C
-    )
 
     net_generation = np.sum(v_opt[:6]) # total generated power
 
@@ -264,18 +264,14 @@ for k in range(N):
     net_supply = np.sum(supply_vec) # total supplied power
     net_demand = np.sum(Dk) # total demand
     net_shortfall = net_demand - net_supply # unmet demand
-
-    # store results
-    net_generation_mc[k] = net_generation
-    net_demand_mc[k] = net_demand
-    net_shortfall_mc[k] = net_shortfall
+    )
 
 # Node 7 demand sample (random node)
-plot_ECDF_ci(Drand[6, :], x_label='Demand at node 7 (MW)', fig_name='ecdf_demand_node7')
+plot_ECDF_ci(Drand[6, :], x_label='Demand at node 7 (MW)', fig_name='task7_ecdf_demand_node7')
 plt.show()
 
 # Line P6,8 capacity sample (random line)
-plot_ECDF_ci(Trand[17, :], x_label='Capacity of line P6,8 (MW)', fig_name='ecdf_capacity_P68')
+plot_ECDF_ci(Trand[17, :], x_label='Capacity of line P6,8 (MW)', fig_name='task7_ecdf_capacity_P68')
 plt.show()
 
 # Scatter plot of one demand vs. another
@@ -294,16 +290,6 @@ plt.xlabel('Capacity of line P1,2 (MW)')
 plt.ylabel('Capacity of line P6,8 (MW)')
 plt.title('Task 7: Capacity scatter')
 plt.grid(True)
-plt.show()
-
-# Cumulative distribution functions of outputs
-plot_ECDF_ci(net_demand_mc, x_label='Net demand (MW)', fig_name='ecdf_net_demand')
-plt.show()
-
-plot_ECDF_ci(net_generation_mc, x_label='Net generation (MW)', fig_name='ecdf_net_generation')
-plt.show()
-
-plot_ECDF_ci(net_shortfall_mc, x_label='Net shortfall (MW)', fig_name='ecdf_net_shortfall')
 plt.show()
 
 # task 7 part h: what fraction of net_shortfall_mc is > 0.1 MW
