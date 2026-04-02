@@ -195,6 +195,102 @@ net_supply = (...) # from A, L(v_opt), H(L), and v_opt using @
 net_demand = (...)
 net_shortfall = (...)
 
+# ------- Task 7 -------
+N = 100
+
+# random demand samples
+medD = D.copy()                     # median demand
+nd = len(D)                        # 12 demand nodes
+covD = 0.10 * np.ones((nd, 1))     # coefficient of variation
+RD = np.eye(nd)                    # no correlation
+Drand = lognormal.rnd(medD, covD, N, RD)   # shape: (12, N)
+
+# random transmission-capacity sample
+n = C.A.shape[1]                   # 24 design variables
+aT = 70.0 * np.ones((n, 1))        # lower transmission capacity
+bT = 99.0 * np.ones((n, 1))        # upper transmission capacity
+qT = 4.0 * np.ones((n, 1))         # lower exponent
+pT = 2.0 * np.ones((n, 1))         # upper exponent
+RT = np.eye(n)                     # no correlation
+Trand = beta.rnd(aT, bT, qT, pT, N, RT)    # correlated Beta sample
+
+# storage for outputs
+net_generation_mc = np.zeros(N)
+net_supply_mc = np.zeros(N)
+net_demand_mc = np.zeros(N)
+net_shortfall_mc = np.zeros(N)
+
+for k in range(N):
+    Dk = Drand[:, k].reshape(-1)
+    Tk = Trand[:, k].reshape(-1)
+
+    # update b = [generation limits; negative demand limits]
+    C.b = np.block([G, -Dk])
+
+    # update lower/upper bounds from random transmission capacities
+    v_lb = -Tk.copy()
+    v_ub =  Tk.copy()
+
+    # no power can flow into generating stations on the first 6 branches
+    v_lb[:6] = 0.0
+
+    # initial guess at midpoint of bounds
+    v_init = 0.5 * (v_lb + v_ub)
+
+    # first solve: lossless
+    C.loss = 0.0
+    v_opt, f_opt, g_opt, cvg_hst, lbda_opt, _ = sqp(
+        power_grid_analysis, v_init, v_lb, v_ub, opts, C
+    )
+
+    # second solve: with losses
+    v_init = v_opt.copy()
+    C.loss = loss
+    v_opt, f_opt, g_opt, cvg_hst, lbda_opt, _ = sqp(
+        power_grid_analysis, v_init, v_lb, v_ub, opts, C
+
+    net_generation = np.sum(v_opt[:6]) # total generated power
+
+    L = C.A @ np.diag(-v_opt) # rebuild L using the optimized design vector
+
+    # delivered power at each of the 14 rows (A, B, then nodes 1..12)
+    row_balance = (C.A * (1 - C.loss * H(L))) @ v_opt
+
+    # the last 12 rows correspond to demand nodes 1..12
+    # these rows are negative in the inequality form, so negate them to get actual supply
+    supply_vec = -row_balance[2:]
+    net_supply = np.sum(supply_vec) # total supplied power
+    net_demand = np.sum(Dk) # total demand
+    net_shortfall = net_demand - net_supply # unmet demand
+    )
+
+# Node 7 demand sample (random node)
+plot_ECDF_ci(Drand[6, :], x_label='Demand at node 7 (MW)', fig_name='task7_ecdf_demand_node7')
+plt.show()
+
+# Line P6,8 capacity sample (random line)
+plot_ECDF_ci(Trand[17, :], x_label='Capacity of line P6,8 (MW)', fig_name='task7_ecdf_capacity_P68')
+plt.show()
+
+# Scatter plot of one demand vs. another
+plt.figure()
+plt.plot(Drand[0, :], Drand[6, :], 'o')
+plt.xlabel('Demand at node 1 (MW)')
+plt.ylabel('Demand at node 7 (MW)')
+plt.title('Task 7: Demand scatter')
+plt.grid(True)
+plt.show()
+
+# Scatter plot of one line capacity vs. another
+plt.figure()
+plt.plot(Trand[6, :], Trand[17, :], 'o')
+plt.xlabel('Capacity of line P1,2 (MW)')
+plt.ylabel('Capacity of line P6,8 (MW)')
+plt.title('Task 7: Capacity scatter')
+plt.grid(True)
+plt.show()
+
+
 #display output values
 formatted_supply = np.char.mod('%6.2f', supply[2:])
 print(f"supply: {' '.join(formatted_supply)}")
