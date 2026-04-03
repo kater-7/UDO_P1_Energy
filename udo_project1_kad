@@ -273,11 +273,11 @@ for k in range(N):
     net_shortfall_mc[k] = net_shortfall
 
 # 7(c) node 7 demand sample (random node)
-plot_ECDF_ci(Drand[6, :], x_label='Demand at node 7 (MW)', fig_name='ecdf_demand_node7')
+plot_ECDF_ci(Drand[6, :], 0.95, 1, x_label='Demand at node 7 (MW)', save_plots=True)
 plt.show()
 
 # 7(d) line P6,8 capacity sample (random line)
-plot_ECDF_ci(Trand[17, :], x_label='Capacity of line P6,8 (MW)', fig_name='ecdf_capacity_P68')
+plot_ECDF_ci(Trand[17, :], 0.95, 2, x_label='Capacity of line P6,8 (MW)', save_plots=True)
 plt.show()
 
 # 7(e) scatter plot of one demand vs. another
@@ -287,6 +287,7 @@ plt.xlabel('Demand at node 1 (MW)')
 plt.ylabel('Demand at node 7 (MW)')
 plt.title('Task 7: Demand scatter')
 plt.grid(True)
+plt.savefig('task7_scatter_demand.png', bbox_inches='tight')
 plt.show()
 
 # 7(f) scatter plot of one line capacity vs. another
@@ -296,16 +297,17 @@ plt.xlabel('Capacity of line P1,2 (MW)')
 plt.ylabel('Capacity of line P6,8 (MW)')
 plt.title('Task 7: Capacity scatter')
 plt.grid(True)
+plt.savefig('task7_scatter_capacity.png', bbox_inches='tight')
 plt.show()
 
 # 7(g) cumulative distribution functions of outputs
-plot_ECDF_ci(net_demand_mc, x_label='Net demand (MW)', fig_name='ecdf_net_demand')
+plot_ECDF_ci(net_demand_mc, 0.95, 3, x_label='Net demand (MW)', save_plots=True)
 plt.show()
 
-plot_ECDF_ci(net_generation_mc, x_label='Net generation (MW)', fig_name='ecdf_net_generation')
+plot_ECDF_ci(net_generation_mc, 0.95, 4, x_label='Net generation (MW)', save_plots=True)
 plt.show()
 
-plot_ECDF_ci(net_shortfall_mc, x_label='Net shortfall (MW)', fig_name='ecdf_net_shortfall')
+plot_ECDF_ci(net_shortfall_mc, 0.95, 5, x_label='Net shortfall (MW)', save_plots=True)
 plt.show()
 
 # 7(h) fraction of net shortfall > 0.1 MW
